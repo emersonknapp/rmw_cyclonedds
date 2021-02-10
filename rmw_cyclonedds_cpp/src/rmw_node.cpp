@@ -1699,13 +1699,16 @@ static dds_qos_t * create_readwrite_qos(
     default:
       rmw_cyclonedds_cpp::unreachable();
   }
+  // if (!rmw_time_equal(qos_policies->lifespan, RMW_DURATION_INFINITE)) {
   if (qos_policies->lifespan.sec > 0 || qos_policies->lifespan.nsec > 0) {
     dds_qset_lifespan(qos, DDS_SECS(qos_policies->lifespan.sec) + qos_policies->lifespan.nsec);
   }
+  // if (!rmw_time_equal(qos_policies->deadline, RMW_DURATION_INFINITE)) {
   if (qos_policies->deadline.sec > 0 || qos_policies->deadline.nsec > 0) {
     dds_qset_deadline(qos, DDS_SECS(qos_policies->deadline.sec) + qos_policies->deadline.nsec);
   }
 
+  // if (rmw_time_equal(qos_policies->liveliness_lease_duration, RMW_DURATION_INFINITE)) {
   if (qos_policies->liveliness_lease_duration.sec == 0 &&
     qos_policies->liveliness_lease_duration.nsec == 0)
   {
@@ -1825,8 +1828,12 @@ static bool dds_qos_to_rmw_qos(const dds_qos_t * dds_qos, rmw_qos_profile_t * qo
       RMW_SET_ERROR_MSG("get_readwrite_qos: deadline not set");
       return false;
     }
-    qos_policies->deadline.sec = (uint64_t) deadline / 1000000000;
-    qos_policies->deadline.nsec = (uint64_t) deadline % 1000000000;
+    if (deadline == DDS_INFINITY) {
+      qos_policies->deadline = RMW_DURATION_INFINITE;
+    } else {
+      qos_policies->deadline.sec = (uint64_t) deadline / 1000000000;
+      qos_policies->deadline.nsec = (uint64_t) deadline % 1000000000;
+    }
   }
 
   {
@@ -1834,8 +1841,13 @@ static bool dds_qos_to_rmw_qos(const dds_qos_t * dds_qos, rmw_qos_profile_t * qo
     if (!dds_qget_lifespan(dds_qos, &lifespan)) {
       lifespan = DDS_INFINITY;
     }
-    qos_policies->lifespan.sec = (uint64_t) lifespan / 1000000000;
-    qos_policies->lifespan.nsec = (uint64_t) lifespan % 1000000000;
+
+    if (lifespan == DDS_INFINITY) {
+      qos_policies->lifespan = RMW_DURATION_INFINITE;
+    } else {
+      qos_policies->lifespan.sec = (uint64_t) lifespan / 1000000000;
+      qos_policies->lifespan.nsec = (uint64_t) lifespan % 1000000000;
+    }
   }
 
   {
@@ -1858,8 +1870,12 @@ static bool dds_qos_to_rmw_qos(const dds_qos_t * dds_qos, rmw_qos_profile_t * qo
       default:
         rmw_cyclonedds_cpp::unreachable();
     }
-    qos_policies->liveliness_lease_duration.sec = (uint64_t) lease_duration / 1000000000;
-    qos_policies->liveliness_lease_duration.nsec = (uint64_t) lease_duration % 1000000000;
+    if (lease_duration == DDS_INFINITY) {
+      qos_policies->liveliness_lease_duration = RMW_DURATION_INFINITE;
+    } else {
+      qos_policies->liveliness_lease_duration.sec = (uint64_t) lease_duration / 1000000000;
+      qos_policies->liveliness_lease_duration.nsec = (uint64_t) lease_duration % 1000000000;
+    }
   }
 
   return true;
